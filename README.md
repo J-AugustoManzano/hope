@@ -1,4 +1,4 @@
-hope
+Hope
 ====
 
 Hope is a minimalist functional programming language developed in the 1970s at the University of Edinburgh by R. M. Burstall, Don Sanella and Dave McQueen that operates on polymorphic data types. It influenced the design of other lazy languages, such as Miranda and Haskell, being contemporary the ML language also developed at the University of Edinburgh. Hope is the first functional language to use call by default being derived from the NPL language, a simple functional language developed by Rod Burstall and John Darlington.
