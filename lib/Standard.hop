@@ -1,178 +1,285 @@
-! The standard environment for Hope, implicitly used by every session
-! and module.
+!!! ---------------------------------------------------- !!!
+!!!                                                      !!!
+!!! Hope default environment (adapted/reorganized).      !!!
+!!!                                                      !!!
+!!! Augusto Manzano (2022)                               !!!
+!!!                                                      !!!
+!!! Standard.hop (modified) for Windows version          !!!
+!!!                                                      !!!
+!!! This file should be used instead of the original     !!!
+!!! Hope language file on your system.                   !!!
+!!!                                                      !!!
+!!! ---------------------------------------------------- !!!
 
-!! Standard type constructors
+!!! >>> infix operators.
 
-! Standard type variables.
+infixr ->, o  : 2;
+infixr #, X   : 4;
+infixr ::, <> : 5; 
+infixr **     : 7; 
+
+infix or               : 1;
+infix and              : 2; 
+infix =, /=            : 3;
+infix <, =<, >, >=, .. : 4;
+infix +, -             : 5;
+infix *, /, div, mod   : 6;
+
+ 
+!!! >>> Type variables.
 
 typevar alpha, beta, gamma;
 
-! Function and product types.
-
-infixr -> : 2;
 abstype neg -> pos;
-
-infixr # : 4;
 abstype pos # pos;
+abstype char;    
 
---- (a # b) (x, y) <= (a x, b y);
-
-infixr X : 4;
+data truval     == false ++ true;    
+data relation   == LESS ++ EQUAL ++ GREATER;    
+data num        == succ num;
+data list alpha == nil ++ alpha :: list alpha;
+ 
 type alpha X beta == alpha # beta;
 
-! Normal right-to-left composition of f and g.
 
-infix o : 2;
-dec o : (beta -> gamma) # (alpha -> beta) -> alpha -> gamma;
---- (f o g) x <= f(g x);
+!!! >>> General functions.
+    
+dec o                   : (beta -> gamma) # (alpha -> beta) -> alpha -> gamma;    
+dec <>                  : list alpha # list alpha -> list alpha;
+dec =, /=, <, =<, >, >= : alpha # alpha -> truval;
+dec +, -, *, /          : num # num -> num;
+dec **                  : num # num -> num;
+dec ..                  : num # num -> list num;
+dec argv                : list (list char);
+dec cbrt                : num -> num;
+dec const               : alpha # beta -> alpha;
+dec compare             : alpha # alpha -> relation;
+dec compare_cond        : relation -> alpha -> alpha -> alpha -> alpha;
+dec cmp_pair            : (alpha # beta) # (alpha # beta) -> relation;
+dec div, mod            : num # num -> num;
+dec error               : list char -> alpha;
+dec from                : num -> list num;
+dec fst                 : alpha # beta -> alpha;
+dec id                  : alpha -> alpha;
+dec negate              : num -> num;
+dec pred                : num -> num;  
+dec read                : list char -> list char;
+dec round               : num # num -> num;
+dec sign                : num -> num;  
+dec snd                 : alpha # beta -> beta;
+dec succ                : num -> num; 
+dec truncate            : num -> num;
+     
+!!! >>> Data conversion functions.
+  
+dec chr     : num -> char;
+dec num2str : num -> list char;
+dec ord     : char -> num;
+dec str2num : list char -> num;    
+
+
+!!! >>> Logic functions.
+  
+dec if_then_else : truval -> alpha -> alpha -> alpha;
+dec and          : truval # truval -> truval;  
+dec not          : truval -> truval;
+dec or           : truval # truval -> truval;
+dec xor          : truval # truval -> truval;
+
+!!! >>> Mathematical constants.
+
+dec e, pi : num;
+
+!!! >>> Math functions.
+  
+dec abs, ceil, floor      : num -> num;
+dec erf, erfc             : num -> num;  
+dec exp, log, log10, sqrt : num -> num;
+dec even, odd             : num -> truval;
+dec gcd, lcm, pow         : num # num -> num;
+dec max, min              : alpha # alpha -> alpha;
+dec quotRem               : num # num -> (num # num);
+
+!!! >>> Trigonometric functions (radians).
+
+dec cos, csc, cot, sec, sin, tan, acos, asin, atan   : num -> num;
+dec cosh, sinh, tanh, todeg, torad, acot, acsc, asec : num -> num;
+dec acosh, asinh, atanh, acsch, asech, acoth         : num -> num;
+dec coth, csch, sech                                 : num -> num;
+dec atan2, hypot                                     : num # num -> num;
+
+
+!!! >>> Protected functions.
+
+private;
+
+--- xor (x, y) <= x /= y;
+
+--- n..m <= if n > m 
+            then [] 
+            else if m > 140000
+                 then error ("Allowed limit: 140000.")
+                 else n :: (succ n .. m);
+                 
+--- (a # b) (x, y) <= (a x, b y);
 
 --- (a -> b) f <= b o f o a;
+    
+--- (f o g) x <= f (g x);
 
-! The identity function.
-
-dec id : alpha -> alpha;
---- id x <= x;
-
-! Booleans with the standard operations.
-
-data bool == false ++ true;
-type truval == bool;
-
-infix or : 1;
-infix and : 2;
-
-dec not : bool -> bool;
---- not true <= false;
---- not false <= true;
-
-dec and : bool # bool -> bool;
---- false and p <= false;
---- true and p <= p;
-
-dec or : bool # bool -> bool;
---- true or p <= true;
---- false or p <= p;
-
-dec if_then_else : bool -> alpha -> alpha -> alpha;
---- if true then x else y <= x;
---- if false then x else y <= y;
-
-! Lists.
-
-infixr :: : 5;
-data list alpha == nil ++ alpha :: list alpha;
-
-! List concatenation.
-
-infixr <> : 5;
-dec <> : list alpha # list alpha -> list alpha;
 --- [] <> ys <= ys;
---- (x::xs) <> ys <= x::(xs <> ys);
 
-! The type num behaves as if it were defined by:
-!	data num == 0 ++ succ num;
-! but is actually implemented a little more efficiently.
-! The type also contains negative numbers (and reals in some implementations).
+--- (x::xs) <> ys <= x :: (xs <> ys);
 
-data num == succ num;
+--- (**) <= pow;
 
-! Similarly, the type char behaves as if it were defined as an enumeration
-! (in the normal order) of all the ASCII character constants.
+--- e  <= exp 1;
 
-abstype char;
+--- pi <= acos 0 * 2;
+
+dec deg : num;
+--- deg <= 57.2957795130823208767981548;
+
+dec rad : num;
+--- rad <=  0.0174532925199432957692369076848;
+
+--- acosh (x) <= log (x + sqrt (pow (x, 2) - 1));
+
+--- asinh (x) <= log (x + sqrt (pow (x, 2) + 1));
+
+--- atanh (x) <= log ((1 + x) / (1 - x)) / 2;
+
+--- acsch (x) <= log (sqrt (1 + (1 / pow (x, 2))) + 1 / x);
+
+--- asech (x) <= log (sqrt (1 / x - 1) * sqrt (1 / x + 1) + 1 / x);
+
+--- acoth (x) <= log ((x + 1) / (x - 1)) / 2;
+
+--- acot (x) <= atan (1 / x);
+
+--- acsc (x) <= asin (1 / x);
+
+--- asec (x) <= acos (1 / x);
+
+--- cbrt (x) <= pow (x, 1 / 3);
 
 --- char x <= x;
 
-!! Internally defined functions
+--- const (x, _) <= x;
 
-! Comparison functions:
-! these evaluate their arguments only to the extent necessary to determine
-! their order.  In comparing distinct constants and constructors, the
-! lesser is the one which came earlier in the data definition in which
-! both were defined.  Pairs compare lexicographically, while comparison
-! of functions triggers a run-time error.  On the types num, char and
-! list(char), these rules give the normal orderings.
+--- coth (x) <= exp(0 - x) / (exp (x) - exp (0 - x)) * 2 + 1;
 
-infix =, /= : 3;
-infix <, =<, >, >= : 4;
-dec =, /=, <, =<, >, >= : alpha # alpha -> bool;
+--- csch (x) <= 2 / (exp (x) - exp (0 - x));
 
-! Lower-level comparison functions.
+--- sech (x) <= 2 / (exp (x) + exp (0 - x));
 
-data relation == LESS ++ EQUAL ++ GREATER;
-
-dec compare : alpha # alpha -> relation;
-
---- x =  y <= (\ EQUAL => true | _ => false) (compare(x, y));
---- x /= y <= (\ EQUAL => false | _ => true) (compare(x, y));
---- x <  y <= (\ LESS => true | _ => false) (compare(x, y));
---- x >= y <= (\ LESS => false | _ => true) (compare(x, y));
---- x >  y <= (\ GREATER => true | _ => false) (compare(x, y));
---- x =< y <= (\ GREATER => false | _ => true) (compare(x, y));
-
-! Conversions.
-
-dec ord : char -> num;
-dec chr : num -> char;
-
-dec num2str : num -> list char;
-dec str2num : list char -> num;
-
-! The contents of a named file (created lazily).
-
-dec read : list char -> list char;
-
-! Abort execution with an error message.
-
-dec error : list char -> alpha;
-
-! The usual arithmetical functions.
-
-infix +, - : 5;
-infix *, /, div, mod : 6;
-dec +, -, *, /, div, mod : num # num -> num;
-
-! Math library.
-
-dec cos, sin, tan, acos, asin, atan : num -> num;
-dec atan2, hypot : num # num -> num;
-dec cosh, sinh, tanh, acosh, asinh, atanh : num -> num;
-dec abs, ceil, floor : num -> num;
-dec exp, log, log10, sqrt : num -> num;
-dec pow : num # num -> num;
-dec erf, erfc : num -> num;
-
-! Any extra arguments on the interpreter command line.
-
-dec argv : list(list char);
-
-! Part of the special treatment of the succ constructor.
-
-dec succ : num -> num;
---- succ n <= n+1;
-
-private;			! Bootstrapping
-
-! Output management:
-
-dec return : alpha;		! evaluation causes an immediate exit
-
-dec print : alpha -> beta;	! strict built-in function
-!!! print x <= return;		! side effect: print x
-
-dec write_element : alpha -> list alpha -> beta; ! strict built-in function
-!!! write_element x <= write_list;	! side effect: print x in write form
-
-dec write_list : list alpha -> beta;
---- write_list [] <= return;
---- write_list(x::xs) <= write_element x xs;
-
-! lexicographical ordering for pairs
-dec compare_cond : relation -> alpha -> alpha -> alpha -> alpha;
---- compare_cond LESS l e g <= l;
---- compare_cond EQUAL l e g <= e;
+--- cmp_pair ((x1, y1), (x2, y2)) <=
+	compare_cond (compare (x1, x2)) LESS (compare (y1, y2)) GREATER;
+	
+--- compare_cond LESS    l e g <= l;
+--- compare_cond EQUAL   l e g <= e;
 --- compare_cond GREATER l e g <= g;
 
-dec cmp_pair : (alpha # beta) # (alpha # beta) -> relation;
---- cmp_pair((x1, y1), (x2, y2)) <=
-	compare_cond (compare(x1, x2)) LESS (compare(y1, y2)) GREATER;
+--- csc x <= 1 / sin x;
+
+--- cot x <= 1 / tan x;
+
+--- even n <= n mod 2 = 0;
+
+--- erf (0) <= 0; ! error is less than 1.2 * 10^-7 for all inputs
+--- erf (x) <= 1 - t * exp ((0 - x) * x - 1.26551223 +
+                   t * (    1.00002368 +
+                   t * (    0.37409196 + 
+                   t * (    0.09678418 + 
+                   t * (0 - 0.18628806 + 
+                   t * (    0.27886807 + 
+                   t * (0 - 1.13520398 + 
+                   t * (    1.48851587 + 
+                   t * (0 - 0.82215223 + 
+                   t * (    0.17087277))))))))))
+             where t == 1 / (1 + 0.5 * abs (x));
+        
+--- erfc (0) <= 1;
+--- erfc (x) <= 1 - erf x;   
+
+--- odd n <= n mod 2 /= 0;
+
+--- from n <= if n > 140000
+              then error ("Allowed limit: 140000.")
+              else n .. 140000;
+
+--- fst (x, _) <= x;
+
+--- gcd (0, n) <= n;
+--- gcd (m, n) <= gcd (floor n mod floor m, m);
+
+--- lcm (_, 0) <= 0;
+--- lcm (0, _) <= 0;
+--- lcm (x, y) <= x * y div gcd (x, y);
+
+--- max (x, y) <= if x > y then x else y;
+
+--- min (x, y) <= if x < y then x else y;
+
+--- negate (x) <= 0 - x;
+
+--- pred 0       <= 0;
+--- pred (n + 1) <= n;
+
+--- quotRem (a, b) <= (a div b, a mod b);
+
+--- sec x <= 1 / cos x;
+
+--- succ n <= n + 1;
+
+--- not true  <= false;
+--- not false <= true;
+
+--- false and p <= false;
+--- true  and p <= p;
+
+--- true  or p <= true;
+--- false or p <= p;
+
+--- if true  then x else y <= x;
+--- if false then x else y <= y;
+
+--- id x <= x;
+
+--- x =  y <= (\ EQUAL   => true  | _ => false) (compare(x, y));
+--- x /= y <= (\ EQUAL   => false | _ => true)  (compare(x, y));
+--- x <  y <= (\ LESS    => true  | _ => false) (compare(x, y));
+--- x >= y <= (\ LESS    => false | _ => true)  (compare(x, y));
+--- x >  y <= (\ GREATER => true  | _ => false) (compare(x, y));
+--- x =< y <= (\ GREATER => false | _ => true)  (compare(x, y));
+
+dec print : alpha -> beta;	
+!!! print x <= return;		
+
+dec return : alpha;		
+
+--- round (n, d) <= if d < 0
+                    then error ("Second argument must be positive number.")
+                    else ceil (n * pow (10, d)) / pow (10, d);  
+
+--- sign n <= if n < 0 then (0 - 1) else
+              if n = 0 then 0       else 1;
+              
+--- snd (_, y) <= y;              
+
+--- tan x <= sin x / cos x;
+
+--- todeg r <= r * deg;
+
+--- torad r <= r * rad;
+
+--- truncate (x) <= if x < 0 
+                    then floor (x) + 1
+                    else floor (x);
+              
+dec write_element : alpha -> list alpha -> beta; 
+!!! write_element x <= write_list;	
+
+dec write_list : list alpha -> beta;
+--- write_list []     <= return;
+--- write_list(x::xs) <= write_element x xs;
